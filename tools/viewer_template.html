@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<style>
+  :root { --bg:#dee3e6; --bar:#1f2a33; --barText:#dee3e6; --btn:#34505f; --btnHover:#1f4fa3; }
+  html,body { margin:0; height:100%; background:var(--bg); font-family:Helvetica,Arial,sans-serif; overflow:hidden; }
+  header { position:fixed; top:0; left:0; right:0; height:52px; background:var(--bar); color:var(--barText);
+           display:flex; align-items:center; gap:10px; padding:0 16px; z-index:2; box-sizing:border-box; }
+  .back { color:#dee3e6; text-decoration:none; font-size:15px; white-space:nowrap; padding:7px 12px; border-radius:6px; background:#34505f; }
+  .back:hover { background:#1f4fa3; }
+  header h1 { font-size:18px; margin:0 auto 0 0; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  button { background:var(--btn); color:#dee3e6; border:0; border-radius:6px; font-size:18px; min-width:40px; height:36px;
+           padding:0 12px; cursor:pointer; }
+  button:hover { background:var(--btnHover); }
+  button:focus-visible, .back:focus-visible { outline:2px solid #dee3e6; outline-offset:2px; }
+  #zoomLabel { min-width:56px; text-align:center; font-size:15px; }
+  #stage { position:absolute; top:52px; left:0; right:0; bottom:0; overflow:hidden; cursor:grab; touch-action:none; }
+  #stage.dragging { cursor:grabbing; }
+  #tree { position:absolute; top:0; left:0; transform-origin:0 0; user-select:none; -webkit-user-drag:none; }
+  #hint { position:fixed; bottom:12px; left:50%; transform:translateX(-50%); background:rgba(31,42,51,.9); color:#dee3e6;
+          padding:8px 14px; border-radius:6px; font-size:14px; transition:opacity 1s; pointer-events:none; }
+  @media (max-width: 640px) {
+    header { gap:6px; padding:0 8px; }
+    header h1 { display:none; }
+    .back { margin-right:auto; }
+    button { min-width:34px; padding:0 8px; font-size:16px; }
+    #zoomLabel { min-width:44px; font-size:13px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <a href="__BACK__" class="back" title="Back">&#8592; __BACKTXT__</a>
+  <h1>__TITLE__</h1>
+  <button id="out" title="Zoom out">−</button>
+  <span id="zoomLabel">100%</span>
+  <button id="in" title="Zoom in">+</button>
+  <button id="fit" title="Fit whole tree">Fit</button>
+  <button id="actual" title="Full size">1:1</button>
+</header>
+<div id="stage"><img id="tree" src="__IMG__" alt="__TITLE__" draggable="false"></div>
+<div id="hint">Scroll or pinch to zoom · drag to move · double-click to zoom in</div>
+<script>
+(function(){
+  const stage=document.getElementById('stage'), img=document.getElementById('tree'), label=document.getElementById('zoomLabel');
+  let scale=1, x=0, y=0, minScale=0.05, maxScale=3;
+  function apply(){ img.style.transform=`translate(${x}px,${y}px) scale(${scale})`; label.textContent=Math.round(scale*100)+'%'; }
+  function zoomAt(f,cx,cy){ const ns=Math.min(maxScale,Math.max(minScale,scale*f)); f=ns/scale;
+    x=cx-(cx-x)*f; y=cy-(cy-y)*f; scale=ns; apply(); }
+  function fit(){ const w=stage.clientWidth,h=stage.clientHeight; scale=Math.min(w/img.naturalWidth,h/img.naturalHeight)*0.98;
+    minScale=scale*0.5; x=(w-img.naturalWidth*scale)/2; y=(h-img.naturalHeight*scale)/2; apply(); }
+  function center(){ return [stage.clientWidth/2, stage.clientHeight/2]; }
+  img.complete ? fit() : img.addEventListener('load',fit);
+  window.addEventListener('resize',fit);
+  stage.addEventListener('wheel',e=>{ e.preventDefault(); const r=stage.getBoundingClientRect();
+    zoomAt(e.deltaY<0?1.15:1/1.15,e.clientX-r.left,e.clientY-r.top); },{passive:false});
+  stage.addEventListener('dblclick',e=>{ const r=stage.getBoundingClientRect(); zoomAt(2,e.clientX-r.left,e.clientY-r.top); });
+  const pts=new Map(); let lastDist=0;
+  stage.addEventListener('pointerdown',e=>{ stage.setPointerCapture(e.pointerId); pts.set(e.pointerId,[e.clientX,e.clientY]); stage.classList.add('dragging'); });
+  stage.addEventListener('pointermove',e=>{ if(!pts.has(e.pointerId)) return; const prev=pts.get(e.pointerId);
+    pts.set(e.pointerId,[e.clientX,e.clientY]);
+    if(pts.size===1){ x+=e.clientX-prev[0]; y+=e.clientY-prev[1]; apply(); }
+    else if(pts.size===2){ const [a,b]=[...pts.values()]; const d=Math.hypot(a[0]-b[0],a[1]-b[1]);
+      const r=stage.getBoundingClientRect(); if(lastDist) zoomAt(d/lastDist,(a[0]+b[0])/2-r.left,(a[1]+b[1])/2-r.top); lastDist=d; } });
+  function up(e){ pts.delete(e.pointerId); lastDist=0; if(!pts.size) stage.classList.remove('dragging'); }
+  stage.addEventListener('pointerup',up); stage.addEventListener('pointercancel',up);
+  document.getElementById('in').onclick=()=>zoomAt(1.4,...center());
+  document.getElementById('out').onclick=()=>zoomAt(1/1.4,...center());
+  document.getElementById('fit').onclick=fit;
+  document.getElementById('actual').onclick=()=>{ const [cx,cy]=center(); zoomAt(1/scale,cx,cy); };
+  setTimeout(()=>{ document.getElementById('hint').style.opacity=0; },5000);
+})();
+</script>
+</body>
+</html>

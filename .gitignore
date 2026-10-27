@@ -1,0 +1,8 @@
+public
+resources
+node_modules
+*.lock
+hugo-scroll.code-workspace
+build/
+__pycache__/
+*.pyc

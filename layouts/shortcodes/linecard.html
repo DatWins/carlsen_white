@@ -1,0 +1,13 @@
+{{- /*
+  One line (e.g. "1.e4 e5"): links to its page with the tree and every game.
+  Params: href title n w d l score names
+*/ -}}
+{{- $n := float (.Get "n") -}}
+<a class="linecard" href="{{ .Get "href" }}">
+  <span class="lc-title">{{ .Get "title" }}</span>
+  <span class="lc-names">{{ .Get "names" }}</span>
+  <span class="lc-bar" role="img" aria-label="Carlsen {{ .Get "w" }} wins, {{ .Get "d" }} draws, {{ .Get "l" }} losses">
+    <i class="w" style="flex:{{ .Get "w" }}"></i><i class="d" style="flex:{{ .Get "d" }}"></i><i class="l" style="flex:{{ .Get "l" }}"></i>
+  </span>
+  <span class="lc-meta"><b>{{ .Get "n" }}</b> games · +{{ .Get "w" }} ={{ .Get "d" }} −{{ .Get "l" }} · <b>{{ .Get "score" }}</b></span>
+</a>
