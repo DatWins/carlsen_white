@@ -142,6 +142,36 @@ def wdl(ids, games):
 
 def families(ids, games, top=3, min_share=0.06):
     """Most common opening names in these games, ignoring rare transposition artefacts."""
-    c = collections.Counter((games[i]["opening"].split(":")[0] or "unnamed") for i in ids)
+    c = collections.Counter(fam_name(games[i]["opening"]) for i in ids)
     out = [(f, n) for f, n in c.most_common(top) if n / max(1, len(ids)) >= min_share]
     return out or c.most_common(1)
+
+
+# ---------------------------------------------------------------- opening-name groups (the chips)
+def fam_name(opening):
+    """'Sicilian Defense: Najdorf Variation, English Attack' -> 'Sicilian Defense'"""
+    return opening.split(":")[0].split(",")[0].strip() or "unnamed"
+
+def var_name(opening):
+    """... -> 'Najdorf Variation' (or '(main line)' when the name has no variation)"""
+    parts = opening.split(":", 1)
+    v = parts[1].strip().split(",")[0].strip() if len(parts) > 1 else ""
+    return v or "(main line)"
+
+def page_groups(page, games, top=10, min_games=3):
+    """Opening-name groups for a page: (level, [(label, n), ...]) and games -> label.
+    Mixed pages group by opening family; pages dominated by one family group by variation."""
+    ids = page["ids"]
+    fams = collections.Counter(fam_name(games[i]["opening"]) for i in ids)
+    level = 1
+    if page["kind"] == "line" and fams and fams.most_common(1)[0][1] >= 0.8 * len(ids):
+        level = 2
+    key = (lambda g: fam_name(g["opening"])) if level == 1 else (lambda g: var_name(g["opening"]))
+    c = collections.Counter(key(games[i]) for i in ids)
+    labels = [(f, n) for f, n in c.most_common(top) if n >= min_games]
+    chosen = {f for f, _ in labels}
+    of_game = {i: (key(games[i]) if key(games[i]) in chosen else "") for i in ids}
+    return level, labels, of_game
+
+def group_slug(page_slug, label):
+    return f"{page_slug}--{slugify(label)}"

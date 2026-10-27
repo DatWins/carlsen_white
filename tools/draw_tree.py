@@ -27,7 +27,9 @@ def board_png(board, last, img_dir, size):
     name = board.epd().replace("/", "_").replace(" ", "_") + (f"_{last.uci()}" if last else "") + f"_{size}.png"
     path = os.path.abspath(os.path.join(img_dir, name))
     if not os.path.exists(path):
-        cairosvg.svg2png(bytestring=svg, write_to=path)
+        tmp = f"{path}.{os.getpid()}.tmp"
+        cairosvg.svg2png(bytestring=svg, write_to=tmp)
+        os.replace(tmp, path)
     return path
 
 def draw(start, out_png, min_games, max_plies, img_dir, size=260, label_pt=34):
@@ -52,7 +54,7 @@ def draw(start, out_png, min_games, max_plies, img_dir, size=260, label_pt=34):
             num = (k.ply + 1) // 2
             mvtxt = f"{num}.{k.san}" if k.ply % 2 else f"{num}...{k.san}"
             lab = (f'<<FONT COLOR="#1a4fd0" POINT-SIZE="{label_pt}"><B>{mvtxt}</B></FONT><BR/>'
-                   f'<FONT COLOR="#555555" POINT-SIZE="{int(label_pt*0.72)}">{k.n} games · {k.score:.0%}</FONT>>')
+                   f'<FONT COLOR="#555555" POINT-SIZE="{int(label_pt*0.72)}">{k.n} game{"" if k.n == 1 else "s"} · {k.score:.0%}</FONT>>')
             dot.edge(nid(x), nid(k), xlabel=lab, penwidth=f"{1.5 + 7*math.sqrt(k.n/top):.1f}")
             stack.append((k, nb, mv))
     base_name = os.path.splitext(out_png)[0]

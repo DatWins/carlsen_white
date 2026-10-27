@@ -20,20 +20,31 @@ def line_page(p, games, tpl, pieces, chessjs):
     else:
         dek = "The less common replies to " + p["title"].split(" ")[0]
     first_label = {"e4": "1.e4", "d4": "1.d4", "c4": "1.c4", "nf3": "1.Nf3", "other": "Other first moves"}[p["first"]]
+    level, labels, of_game = common.page_groups(p, games)
+    mpath = os.path.join(ROOT, "build", "variations.json")
+    manifest = json.load(open(mpath)) if os.path.exists(mpath) else {}
+    chips, trees = [], {}
+    for label, n in labels:
+        slug = common.group_slug(p["slug"], label)
+        has = slug in manifest and os.path.exists(os.path.join(ROOT, "static", "trees", slug, "preview.jpg"))
+        chips.append([label, n])
+        if has:
+            trees[label] = {"slug": slug, "moves": manifest[slug]["moves"], "n": manifest[slug]["n"]}
     rows = []
     for i in ids:
         g = games[i]
         rows.append([g["date"], g["event"], g["site"], g["round"], g["black"], g["welo"], g["belo"],
-                     g["result"], g["eco"], g["opening"], " ".join(g["moves"])])
+                     g["result"], g["eco"], g["opening"], " ".join(g["moves"]), of_game[i]])
     tree = ""
     if os.path.exists(os.path.join(ROOT, "static", "trees", p["slug"], "preview.jpg")):
-        tree = (f'    <a class="tree" href="../../trees/{p["slug"]}/"><img src="../../trees/{p["slug"]}/preview.jpg" '
-                f'alt="Opening tree for {esc(p["title"])}"><span>Open the zoomable tree &rarr;</span></a>\n')
+        tree = (f'    <a class="tree" id="treeLink" href="../../trees/{p["slug"]}/"><img id="treeImg" src="../../trees/{p["slug"]}/preview.jpg" '
+                f'alt="Opening tree for {esc(p["title"])}"><span id="treeCap">Open the zoomable tree &rarr;</span></a>\n'
+                f'    <div class="stats" id="treeNote"></div>\n')
     back = f"../../#{common.ANCHOR[p['first']]}"
     out = (tpl.replace("__TITLE__", esc(p["title"])).replace("__KICKER__", f"Carlsen with White · {first_label}")
               .replace("__DEK__", dek).replace("__TREE__", tree).replace("__BACKHREF__", back).replace("__BACKTXT__", "Repertoire")
               .replace("__PIECES__", pieces).replace("__CHESSJS__", chessjs)
-              .replace("__DATA__", json.dumps({"games": rows}, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")))
+              .replace("__DATA__", json.dumps({"games": rows, "chips": chips, "trees": trees}, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")))
     d = os.path.join(ROOT, "static", "lines", p["slug"]); os.makedirs(d, exist_ok=True)
     open(os.path.join(d, "index.html"), "w", encoding="utf-8").write(out)
     return st
