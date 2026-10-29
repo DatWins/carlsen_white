@@ -32,3 +32,7 @@ Pushing to GitHub publishes the site: in the repo, Settings → Pages → Source
 | `static/trees/`, `static/lines/` | the generated tree and game pages |
 | `content/en/homepage/` | the generated home page sections |
 | `layouts/`, `themes/` | the Hugo site design |
+
+## Rebuild order
+`build_trees.py` → `build_variations.py` → `build_pages.py` → `build_cards.py` → `hugo`
+(`build_pages.py` rewrites the home-page sections, so run `build_cards.py` after it.)

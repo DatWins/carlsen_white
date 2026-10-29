@@ -17,6 +17,8 @@ def line_page(p, games, tpl, pieces, chessjs):
         dek = "Mostly " + ", ".join(f"{esc(f)} ({n})" for f, n in fams)
     elif p["first"] == "other":
         dek = "Everything else Carlsen has opened with: 1.b3, 1.g3, 1.a3, 1.e3, 1.Nc3, 1.b4, 1.a4, 1.f4, 1.c3 and 1.f3"
+    elif p.get("dek"):
+        dek = p["dek"]
     else:
         dek = "The less common replies to " + p["title"].split(" ")[0]
     first_label = {"e4": "1.e4", "d4": "1.d4", "c4": "1.c4", "nf3": "1.Nf3", "other": "Other first moves"}[p["first"]]
@@ -113,8 +115,8 @@ def main():
     open(os.path.join(ch, f"{weight:02d}-other-first-moves.md"), "w", encoding="utf-8").write(body); weight += 1
 
     # how
-    open(os.path.join(ch, f"{weight:02d}-how.md"), "w", encoding="utf-8").write(
-        front("How This Is Made", "How It Works", weight).replace("header_menu: true", "header_menu: false") +
+    open(os.path.join(ch, f"{weight + 1:02d}-how.md"), "w", encoding="utf-8").write(
+        front("How This Is Made", "How It Works", weight + 1).replace("header_menu: true", "header_menu: false") +
         f"The games come from a SCID database of Carlsen's games with White: 1,992 games from 2000 to 2026. "
         f"{skipped['Chess960 / custom start']} Chess960 games and {skipped['No moves recorded']} games with no moves recorded are left out, "
         f"which leaves the **{total['n']:,}** games on this site.\n\n"

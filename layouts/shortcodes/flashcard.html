@@ -1,0 +1,24 @@
+{{- /*
+  Flashcard, based on mrnice.dev's Hugo flashcard shortcode
+  (https://www.mrnice.dev/posts/hugo-flashcard-shortcode-for-study/).
+  Usage:
+    {{< flashcard question="1.e4 c5 2.Nf3 d6 — what does Carlsen play?" board="trees/carlsen-white/cards/06.svg" >}}
+    **3.Bb5+** Nd7 4.d4 ...
+    {{< /flashcard >}}
+  question = front of the card (required)
+  board    = optional picture shown on the front (path inside static/)
+  inner    = the answer, hidden until the card is clicked
+*/ -}}
+{{- $q := .Get "question" -}}
+{{- if not $q }}{{ errorf "missing value for param 'question': %s" .Position }}{{ end -}}
+{{- $answerID := printf "answer-%d-%s" .Ordinal (substr (sha1 $q) 0 10) -}}
+<div class="flashcard">
+  <button class="flashcard__front" type="button" aria-expanded="false" aria-controls="{{ $answerID }}" onclick="toggleAnswer('{{ $answerID }}', this)">
+    {{- with .Get "board" }}<img class="flashcard__board" src="{{ . | relURL }}" alt="Board position" loading="lazy" width="300" height="300">{{ end }}
+    <span class="flashcard__question">{{ $q | markdownify }}</span>
+    <span class="flashcard__hint">Click to reveal</span>
+  </button>
+  <div id="{{ $answerID }}" class="flashcard__back">
+    {{ .Inner | markdownify }}
+  </div>
+</div>

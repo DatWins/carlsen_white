@@ -129,9 +129,54 @@ def line_groups(games, root):
                               reply=None, ids=rest, node=None, kind="other"))
             used.update(rest)
     rest = [g["id"] for g in games if g["id"] not in used]
+    final = []
+    for p in pages:
+        final.extend(split_page(p) if p["slug"] in SPLIT else [p])
+    pages = final
     pages.append(dict(slug="other-first-moves", title="Other first moves", first="other",
                       reply=None, ids=rest, node=None, kind="other"))
     return pages
+
+SPLIT = {"d4-nf6"}      # pages too big to read in one go are split by White's next move
+SPLIT_OVER = 300        # ... and any piece still bigger than this is split once more
+
+def split_page(p, depth=0):
+    """Break a big line page into one page per next White move (replies with >= MIN_REPLY games), plus the rest."""
+    node = p["node"]
+    kids = [k for k in sorted(node.kids.values(), key=lambda k: -k.n) if k.n >= MIN_REPLY]
+    out, used = [], set()
+    for k in kids:
+        ids = list(k.games); used.update(ids)
+        sub = dict(slug=f"{p['slug']}-{slugify(k.san)}", title=f"{pgn_moves_text(k.path())}", first=p["first"],
+                   reply=k.san, ids=ids, node=k, kind="line")
+        out.append(sub)
+    rest = [i for i in p["ids"] if i not in used]
+    result = []
+    for sub in out:
+        if sub["node"].n > SPLIT_OVER and depth < 1:
+            # second level: Black's answer
+            result.extend(split_by_black(sub))
+        else:
+            result.append(sub)
+    if rest:
+        result.append(dict(slug=f"{p['slug']}-other", title=f"{p['title']} — other second moves",
+                           first=p["first"], reply=None, ids=rest, node=None, kind="other",
+                           dek=f"The less common second moves after {pgn_moves_text(node.path())}"))
+    return result
+
+def split_by_black(p):
+    node = p["node"]
+    kids = [k for k in sorted(node.kids.values(), key=lambda k: -k.n) if k.n >= MIN_REPLY]
+    out, used = [], set()
+    for k in kids:
+        ids = list(k.games); used.update(ids)
+        out.append(dict(slug=f"{p['slug']}-{slugify(k.san)}", title=pgn_moves_text(k.path()), first=p["first"],
+                        reply=k.san, ids=ids, node=k, kind="line"))
+    rest = [i for i in p["ids"] if i not in used]
+    if rest:
+        out.append(dict(slug=f"{p['slug']}-other", title=f"{p['title']} — other replies", first=p["first"], reply=None,
+                        ids=rest, node=None, kind="other", dek=f"The less common replies to {p['title']}"))
+    return out
 
 def wdl(ids, games):
     w = sum(games[i]["result"] == "1-0" for i in ids)

@@ -1,0 +1,24 @@
+{{- /*
+  A grid of flashcards. Put {{< flashcard >}} cards inside.
+  Usage: {{< flashcards >}} ...cards... {{< /flashcards >}}
+    title="1.e4"  -> the group starts closed; click the title to open it
+    tools="true"  -> Reveal all / Hide all buttons (they act on the whole section)
+*/ -}}
+{{- if eq (.Get "tools") "true" }}
+<div class="flashcards-tools">
+  <button class="flashcards-all" type="button" data-show="true">Reveal all</button>
+  <button class="flashcards-all" type="button" data-show="false">Hide all</button>
+</div>
+{{- else if .Get "title" }}
+{{- $n := strings.Count `class="flashcard"` (string .Inner) }}
+<details class="flashcards-group">
+  <summary>{{ .Get "title" }} <span class="flashcards-count">{{ $n }} {{ if eq $n 1 }}card{{ else }}cards{{ end }}</span></summary>
+  <div class="flashcards">
+{{ .Inner }}
+  </div>
+</details>
+{{- else }}
+<div class="flashcards">
+{{ .Inner }}
+</div>
+{{- end }}
